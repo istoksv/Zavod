@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>KHS Line + Стикерометр | Полный учёт с синхронизацией</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #d4e4f5 0%, #c0d4e8 100%);
+            padding: 12px;
+            min-height: 100vh;
+            transition: background 0.2s ease;
+        }
+
+        body.line-stopped {
+            background: linear-gradient(135deg, #ffe8e8 0%, #ffd4d4 100%);
+        }
+
+        .app-card {
+            max-width: 650px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 36px;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #d4e4f5;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-img {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            border: none;
+        }
+
+        .mode-bar {
+            background: #eef4fa;
+            padding: 8px 16px;
+            display: flex;
+            gap: 12px;
+            border-bottom: 1px solid #c8dce8;
+        }
+
+        .mode-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 10px;
+            border-radius: 40px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #1a4b6e;
+        }
+
+        .mode-btn.active {
+            background: white;
+            color: #1a4b6e;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            background: #eef4fa;
+            border-bottom: 1px solid #c8dce8;
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px 6px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #1a4b6e;
+            cursor: pointer;
+            transition: 0.2s;
+            border-radius: 0;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #1a4b6e;
+            border-bottom: 3px solid #1a4b6e;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 8px 16px 24px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .date-box {
+            background: rgba(26, 75, 110, 0.12);
+            padding: 8px 12px;
+            border-radius: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            font-size: 0.8rem;
+            margin: 12px 0 4px 0;
+        }
+
+        .date-box label {
+            font-weight: 500;
+            color: #1a4b6e;
+        }
+
+        .date-box input {
+            background: white;
+            border: 1px solid #b8cce0;
+            padding: 6px 12px;
+            border-radius: 32px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #1a4b6e;
+        }
+
+        .operator-row, .line-node-row, .expiry-row, .info-row, .material-row {
+            background: #f0f6fc;
+            border-radius: 28px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            border: 1px solid #c8dce8;
+        }
+
+        .operator-row label {
+            font-weight: 700;
+            color: #1a4b6e;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .operator-row input {
+            flex: 2;
+            min-width: 180px;
+            padding: 10px 14px;
+            border-radius: 40px;
+            border: 1px solid #b8cce0;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: white;
+        }
+
+        .line-node-field, .expiry-field, .info-field, .material-field {
+            flex: 1;
+            min-width: 130px;
+        }
+
+        .line-node-field label, .expiry-field label, .info-field label, .material-field label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #1a4b6e;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .line-node-field select, .expiry-field input, .info-field input, .info-field select, .material-field input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 32px;
+            border: 1px solid #c8dce8;
+            font-size: 0.9rem;
+            background: white;
+            font-weight: 500;
+        }
+
+        .material-field .readonly-value {
+            background: #e4eff8;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px 12px;
+            border: 1px solid #c8dce8;
+            text-align: center;
+        }
+
+        .stat-card label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #1a4b6e;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1a4b6e;
+        }
+
+        .stat-card input {
+            font-size: 1.4rem;
+            font-weight: 700;
+            border: none;
+            background: transparent;
+            width: 100%;
+            text-align: center;
+            color: #1a4b6e;
+            outline: none;
+        }
+
+        .section-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1a4b6e;
+            margin: 18px 0 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid #3a7ca8;
+            padding-left: 10px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            border-radius: 20px;
+            border: 1px solid #c8dce8;
+            background: white;
+            margin-bottom: 16px;
+        }
+
+        .hour-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.7rem;
+            min-width: 280px;
+        }
+
+        .hour-table th {
+            background: #e4eff8;
+            padding: 10px 4px;
+            color: #1a4b6e;
+        }
+
+        .hour-table td {
+            padding: 8px 4px;
+            text-align: center;
+            border-bottom: 1px solid #e2edf2;
+        }
+
+        .hour-input {
+            width: 85px;
+            padding: 8px 6px;
+            text-align: center;
+            border: 1px solid #c8dce8;
+            border-radius: 40px;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .status-panel {
+            background: #eef4fa;
+            border-radius: 32px;
+            padding: 14px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin: 16px 0;
+            border: 1px solid #c8dce8;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: white;
+            padding: 6px 16px;
+            border-radius: 60px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #1a4b6e;
+        }
+
+        .timer-block {
+            font-family: monospace;
+            background: #1a4b6e;
+            padding: 6px 16px;
+            border-radius: 60px;
+            color: #e8f0f8;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0 18px;
+        }
+
+        button {
+            border: none;
+            font-weight: 700;
+            padding: 14px 16px;
+            border-radius: 60px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: 0.1s;
+        }
+
+        .btn-start { background: #1a4b6e; color: white; }
+        .btn-start-shift { background: #1e7b48; color: white; }
+        .btn-stop { background: #c2412c; color: white; }
+        .btn-custom-stop { background: #e67e22; color: white; }
+        .btn-excel { background: #2e7d32; color: white; }
+        .btn-reset { background: #f0f4f9; border: 1px solid #c8dce8; color: #c2412c; }
+
+        .log-area {
+            background: #fafeff;
+            border-radius: 24px;
+            border: 1px solid #c8dce8;
+            padding: 12px;
+            max-height: 340px;
+            overflow-y: auto;
+            margin-top: 8px;
+        }
+
+        .log-item {
+            background: #ffffff;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            border-left: 4px solid #c2412c;
+        }
+
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-weight: 700;
+        }
+
+        .log-comment {
+            margin: 8px 0 6px;
+            color: #2c3e4e;
+            background: #f8fafc;
+            padding: 6px 10px;
+            border-radius: 16px;
+        }
+
+        .comment-btn {
+            background: #eef2f5;
+            border: 1px solid #bdd4e0;
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: auto;
+            display: inline-flex;
+        }
+
+        .footer-note {
+            font-size: 0.6rem;
+            text-align: center;
+            margin-top: 20px;
+            color: #7a9cba;
+            padding-top: 14px;
+            border-top: 1px solid #c8dce8;
+        }
+
+        .sticker-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 16px;
+            margin: 12px 0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .sticker-input-group {
+            background: #f0f6fc;
+            border-radius: 28px;
+            padding: 14px 16px;
+            margin-bottom: 18px;
+        }
+
+        .dual {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8fbfe;
+            border-radius: 60px;
+            padding: 4px 14px;
+            border: 1px solid #cde0ed;
+        }
+
+        .field {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            background: white;
+            padding: 4px 12px;
+            border-radius: 40px;
+            flex: 1;
+        }
+
+        .field label { font-size: 0.6rem; font-weight: 700; color: #5681a0; }
+        .field input { border: none; background: transparent; font-size: 1rem; font-weight: 600; width: 80px; text-align: center; outline: none; }
+
+        .result-area {
+            background: linear-gradient(115deg, #123845, #1f556b);
+            border-radius: 28px;
+            padding: 18px 16px;
+            margin-bottom: 18px;
+            text-align: center;
+            color: white;
+        }
+
+        .result-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            font-family: monospace;
+            background: rgba(255,240,200,0.12);
+            display: inline-block;
+            padding: 4px 20px;
+            border-radius: 60px;
+        }
+
+        .params-block {
+            background: #f0f7fc;
+            border-radius: 24px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+        }
+
+        .param-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .param-input {
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+            background: white;
+            padding: 4px 14px;
+            border-radius: 40px;
+            border: 1px solid #cde0ed;
+        }
+        .param-input input { width: 90px; text-align: center; border: none; background: transparent; font-weight: 600; }
+
+        .master-container {
+            padding: 16px;
+        }
+
+        .stats-row-master {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-card-master {
+            background: white;
+            border-radius: 20px;
+            padding: 12px 20px;
+            flex: 1;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border: 1px solid #c8dce8;
+        }
+
+        .stat-card-master .num {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #1a4b6e;
+        }
+
+        .stat-card-master .label {
+            font-size: 0.7rem;
+            color: #6c8eae;
+        }
+
+        .lines-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .line-group-card {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid #c8dce8;
+        }
+
+        .line-title {
+            background: #f0f6fc;
+            padding: 14px 18px;
+            font-weight: 800;
+            font-size: 1rem;
+            color: #1a4b6e;
+            border-bottom: 1px solid #c8dce8;
+        }
+
+        .nodes-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .node-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            border-bottom: 1px solid #eef2f7;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .node-item:hover {
+            background: #f8fafc;
+        }
+
+        .node-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .node-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #2c3e4e;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-dot-running { background: #1e7b48; box-shadow: 0 0 0 2px #e6f4ea; }
+        .status-dot-stopped { background: #c2412c; box-shadow: 0 0 0 2px #fee8e8; }
+        .status-dot-inactive { background: #8ba3bc; box-shadow: 0 0 0 2px #eef2f7; }
+
+        .status-text-master {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 30px;
+        }
+        .status-text-running { background: #e6f4ea; color: #1e7b48; }
+        .status-text-stopped { background: #fee8e8; color: #c2412c; }
+        .status-text-inactive { background: #eef2f7; color: #8ba3bc; }
+
+        .refresh-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 16px;
+        }
+        .refresh-btn {
+            background: #1a4b6e;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            width: auto;
+        }
+        .detail-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 16px;
+        }
+        .detail-card {
+            background: white;
+            border-radius: 48px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px;
+        }
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #eef2f7;
+        }
+        .detail-title { font-size: 1.2rem; font-weight: 800; color: #1a4b6e; }
+        .detail-close { background: #eef2f5; border: none; width: 36px; height: 36px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
+        .detail-info-row { margin-bottom: 16px; }
+        .detail-label { font-size: 0.7rem; text-transform: uppercase; color: #6c8eae; font-weight: 700; }
+        .detail-value { font-size: 1rem; font-weight: 600; color: #2c3e4e; margin-top: 4px; }
+        .detail-stops { margin-top: 20px; border-top: 1px solid #eef2f7; padding-top: 16px; }
+        .detail-stop-item { background: #f8fafc; border-radius: 20px; padding: 12px; margin-bottom: 12px; border-left: 3px solid #c2412c; }
+        .detail-stop-reason { font-weight: 700; display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .detail-stop-time { font-size: 0.65rem; color: #8ba3bc; }
+        .detail-stop-comment { font-size: 0.7rem; color: #4a627a; margin-top: 8px; background: white; padding: 8px 10px; border-radius: 16px; }
+        .detail-btn { width: 100%; background: #2e7d32; color: white; border: none; padding: 14px; border-radius: 60px; font-weight: 700; margin-top: 20px; cursor: pointer; }
+        .reason-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 16px 0; }
+        .reason-opt { background: #f2f2f2; border: none; padding: 10px; border-radius: 60px; font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+        .reason-opt.selected { background: #cfe3f0; border: 2px solid #1a4b6e; }
+        .time-row { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+        .time-field { flex: 1; }
+        .time-field label { font-size: 0.7rem; font-weight: 700; color: #1a4b6e; display: block; margin-bottom: 6px; }
+        .time-field input { width: 100%; padding: 10px 12px; border-radius: 32px; border: 1px solid #c8dce8; font-size: 0.85rem; }
+        .custom-reason-section { margin: 16px 0; border-top: 1px solid #e0e8e0; padding-top: 16px; }
+        .custom-input-group { display: flex; gap: 8px; flex-wrap: wrap; }
+        .custom-input-group input { flex: 2; padding: 10px 14px; border-radius: 60px; border: 1px solid #c8dce8; }
+        .saved-notes-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .saved-note-btn { background: #fff; border: 1px solid #c8dce8; padding: 6px 12px; border-radius: 40px; font-size: 0.7rem; cursor: pointer; }
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #1a4b6e;
+        }
+        .error-message {
+            text-align: center;
+            padding: 40px;
+            color: #c2412c;
+            background: #fee8e8;
+            border-radius: 24px;
+        }
+        @media (max-width: 600px) { .stats-grid { grid-template-columns: 1fr; } .result-number { font-size: 1.5rem; } }
+    </style>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+</head>
+<body>
+<div class="app-card">
+    <div class="header">
+        <img src="https://svyatoyistochnik.com/local/templates/v1/assets/images/og_image.png" alt="Святой источник" class="logo-img" onerror="this.onerror=null; this.parentElement.innerHTML='<div style=\'padding:20px; text-align:center; color:#1a4b6e; font-weight:bold;\'>СВЯТОЙ ИСТОЧНИК</div>'">
+    </div>
+    <div class="mode-bar">
+        <button class="mode-btn active" data-mode="operator">👨‍🔧 Режим оператора</button>
+        <button class="mode-btn" data-mode="master">👨‍💼 Режим мастера</button>
+    </div>
+    <div id="operatorMode" class="mode-content">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="khs">🏭 Учёт линии</button>
+            <button class="tab-btn" data-tab="sticker">🏷️ Стикерометр (по весу)</button>
+        </div>
+        <div id="khsTab" class="tab-content active"><div class="date-box"><label>📅 Дата отчёта:</label><input type="date" id="reportDate" value="2026-06-07"><div class="save-status" id="saveStatus">💾</div></div><div class="operator-row"><label>👤 ФИО ОПЕРАТОРА:</label><input type="text" id="operatorName" placeholder="Иванов Иван Иванович" value=""></div><div class="line-node-row"><div class="line-node-field"><label>🏭 ЛИНИЯ</label><select id="lineSelect"><option value="KHS">KHS</option><option value="KHS2">KHS2</option><option value="KHS3">KHS3</option><option value="KOSME">KOSME</option><option value="Tech long">Tech long</option><option value="APET">APET</option></select></div><div class="line-node-field"><label>🔧 УЗЕЛ / СЕКЦИЯ</label><select id="nodeSelect"><option value="Розлив">Розлив</option><option value="Этикетка">Этикетка</option><option value="Упаковка">Упаковка</option><option value="Паллетайзер">Паллетайзер</option></select></div></div><div class="expiry-row"><div class="expiry-field"><label>📅 СРОК ГОДНОСТИ (ОТ)</label><input type="text" id="expiryFrom" placeholder="дд.мм.гггг" value="01.06.2026"></div><div class="expiry-field"><label>📅 СРОК ГОДНОСТИ (ДО)</label><input type="text" id="expiryTo" placeholder="дд.мм.гггг" value="01.06.2027"></div></div><div class="info-row"><div class="info-field"><label>🏷️ ПРОДУКЦИЯ</label><input type="text" id="productName" value="Вода «Святой источник»"></div><div class="info-field"><label>🕒 СМЕНА</label><select id="shiftSelect"><option value="day">🌞 ДЕНЬ (07:00-19:00)</option><option value="night">🌙 НОЧЬ (19:00-07:00)</option></select></div></div><div class="material-row"><div class="material-field"><label>📦 ОСТАТОК МАТЕРИАЛА (НАЧАЛО)</label><input type="number" id="materialStart" value="50000" step="100"></div><div class="material-field"><label>➕ ПРИХОД МАТЕРИАЛА</label><input type="number" id="materialIncome" value="0" step="100"></div><div class="material-field"><label>⚠️ БРАК (шт)</label><input type="number" id="defectAmount" value="0" step="10"></div><div class="material-field"><label>📦 ОСТАТОК МАТЕРИАЛА (КОНЕЦ)</label><input type="text" id="materialEnd" readonly class="readonly-value"></div></div><div class="stats-grid"><div class="stat-card"><label>📋 ПЛАН (шт)</label><input type="number" id="planShift" value="48000" step="500"></div><div class="stat-card"><label>⚙️ СКОРОСТЬ (шт/ч)</label><input type="number" id="machineSpeed" value="4000" step="100"></div><div class="stat-card"><label>✅ ФАКТ (шт)</label><div class="value" id="factDisplay">0</div></div><div class="stat-card"><label>📊 ЭФФЕКТИВНОСТЬ</label><div class="value" id="efficiencyDisplay">0%</div></div></div><div class="section-title">⏱️ ПОЧАСОВАЯ ВЫРАБОТКА (нарастающий итог, шт)</div><div class="table-wrapper"><table class="hour-table"><thead><tr><th>ЧАС</th><th>НАКОПЛЕНО, шт</th></tr></thead><tbody id="hourlyTbody"></tbody></table></div><div class="status-panel"><div class="status-badge"><span id="statusIcon">⚪</span> <strong id="statusText">СМЕНА НЕ НАЧАТА</strong></div><div><span style="font-size:0.7rem;">⏲️ Текущий простой</span><br><strong id="downtimeTimer" class="timer-block">00:00:00</strong></div></div><div class="action-buttons"><button id="startShiftBtn" class="btn-start-shift">🟢 НАЧАТЬ СМЕНУ</button><button id="startLineBtn" class="btn-start" style="display:none;">▶️ ЗАПУСТИТЬ ЛИНИЮ</button><button id="openStopModalBtn" class="btn-stop" style="display:none;">⏹️ ОСТАНОВ (сейчас + коммент)</button><button id="openCustomStopModalBtn" class="btn-custom-stop" style="display:none;">📅 СОЗДАТЬ ОСТАНОВКУ ЛИНИИ (выбрать время)</button><button id="exportHtmlBtn" class="btn-excel">📄 HTML-ОТЧЁТ (с печатью и Excel внутри)</button><button id="resetSessionBtn" class="btn-reset">⟳ СБРОС СМЕНЫ</button></div><div class="section-title">📋 ЖУРНАЛ ОСТАНОВОК</div><div id="stopsLog" class="log-area">— Смена не начата —</div><div class="footer-note">🔴 Остановки фиксируются в журнале и отчётах. ☁️ Данные синхронизируются через Firebase Cloud</div></div>
+        <div id="stickerTab" class="tab-content"><div class="sticker-card"><div class="sticker-input-group"><div class="label">⚖️ Текущий вес рулона (с втулкой)</div><div class="dual"><div class="field"><label>кг</label><input type="number" id="stickerKg" value="5.66" step="0.01"></div><div class="sep">+</div><div class="field"><label>г</label><input type="number" id="stickerGram" value="0" step="1"></div></div></div><div class="result-area"><div class="result-label">📌 ОСТАТОК СТИКЕРОВ</div><div class="result-number" id="stickerRemaining">—</div><div class="result-hint" id="stickerMsg">введите вес рулона</div></div><div class="params-block"><div class="param-row"><div class="param-label">🏷️ Масса 1 стикера:</div><div class="param-input"><input type="number" id="weightPerSticker" value="0.0366667" step="0.0001"><span>г</span></div></div><div class="param-row"><div class="param-label">🔄 Вес пустой втулки:</div><div class="param-input"><input type="number" id="coreWeight" value="10" step="1"><span>г</span></div></div></div><div class="footer-note">⚡ Без лимита по количеству! (текущий вес − втулка) / вес 1 стикера → целые штуки.</div></div></div>
+    </div>
+    <div id="masterMode" class="mode-content" style="display:none;"><div class="master-container"><div class="stats-row-master"><div class="stat-card-master"><div class="num" id="masterTotalNodes">0</div><div class="label">Всего узлов</div></div><div class="stat-card-master"><div class="num" id="masterRunningNodes">0</div><div class="label">В работе</div></div><div class="stat-card-master"><div class="num" id="masterStoppedNodes">0</div><div class="label">Остановлено</div></div></div><div class="refresh-bar"><button class="refresh-btn" id="masterRefreshBtn">🔄 Обновить</button></div><div id="masterLinesList" class="lines-list"><div style="text-align:center; padding:40px;">Загрузка...</div></div><div class="footer-note" style="margin-top:20px;">🔄 Данные синхронизируются через Firebase Cloud в реальном времени | Последнее обновление: <span id="masterLastUpdate">—</span></div></div></div>
+</div>
+<div id="stopModal" class="detail-modal"><div class="detail-card" style="max-width:450px;"><h3 style="margin-bottom:16px;">⏸️ ОСТАНОВКА ЛИНИИ</h3><div class="reason-grid" id="reasonGrid"><button data-reason="Обрыв ДМ" class="reason-opt">🧵 Обрыв ДМ</button><button data-reason="Не прошла склейка" class="reason-opt">🔗 Не прошла склейка</button><button data-reason="Ремонт" class="reason-opt">🔧 Ремонт</button><button data-reason="ТО" class="reason-opt">🛠️ ТО</button><button data-reason="Потеря метки" class="reason-opt">🏷️ Потеря метки</button><button data-reason="Другое" class="reason-opt">📝 Другое</button></div><div class="custom-reason-section"><div style="font-weight: 700; font-size: 0.75rem;">📝 Свои причины</div><div class="custom-input-group"><input type="text" id="newCustomReason" placeholder="Новая причина"><button id="saveCustomReasonBtn" style="background:#1a4b6e; color:white; border:none; padding:10px 16px; border-radius:40px;">💾 Сохранить</button></div><div id="savedReasonsList" class="saved-notes-list"></div></div><label>💬 Комментарий / дополнение:</label><textarea id="modalComment" rows="3" placeholder="Введите детали..." style="width:100%; border-radius:28px; padding:12px; border:1px solid #c8dce8; margin:12px 0;"></textarea><div class="modal-buttons" style="display:flex; gap:12px;"><button id="modalCancelBtn" style="flex:1; background:#eef2f5; border:none; padding:12px; border-radius:60px;">Отмена</button><button id="modalConfirmBtn" style="flex:1; background:#c2412c; color:white; border:none; padding:12px; border-radius:60px;">✅ Остановить</button></div></div></div>
+<div id="customStopModal" class="detail-modal"><div class="detail-card" style="max-width:500px;"><h3 style="margin-bottom:16px;">📅 СОЗДАТЬ ОСТАНОВКУ ЛИНИИ (произвольное время)</h3><div class="time-row"><div class="time-field"><label>⏱️ Начало остановки:</label><input type="datetime-local" id="customStopStart"></div><div class="time-field"><label>⏱️ Конец остановки:</label><input type="datetime-local" id="customStopEnd"></div></div><div class="reason-grid" id="customReasonGrid"><button data-reason="Обрыв ДМ" class="reason-opt">🧵 Обрыв ДМ</button><button data-reason="Не прошла склейка" class="reason-opt">🔗 Не прошла склейка</button><button data-reason="Ремонт" class="reason-opt">🔧 Ремонт</button><button data-reason="ТО" class="reason-opt">🛠️ ТО</button><button data-reason="Потеря метки" class="reason-opt">🏷️ Потеря метки</button><button data-reason="Другое" class="reason-opt">📝 Другое</button></div><div class="custom-reason-section"><div style="font-weight: 700; font-size: 0.75rem;">📝 Свои причины</div><div class="custom-input-group"><input type="text" id="newCustomReason2" placeholder="Новая причина"><button id="saveCustomReasonBtn2" style="background:#1a4b6e; color:white; border:none; padding:10px 16px; border-radius:40px;">💾 Сохранить</button></div><div id="savedReasonsList2" class="saved-notes-list"></div></div><label>💬 Комментарий / описание:</label><textarea id="customStopComment" rows="3" placeholder="Введите детали остановки..." style="width:100%; border-radius:28px; padding:12px; border:1px solid #c8dce8; margin:12px 0;"></textarea><div class="modal-buttons" style="display:flex; gap:12px;"><button id="customStopCancelBtn" style="flex:1; background:#eef2f5; border:none; padding:12px; border-radius:60px;">Отмена</button><button id="customStopApplyBtn" style="flex:1; background:#e67e22; color:white; border:none; padding:12px; border-radius:60px;">✅ Добавить остановку</button></div></div></div>
+<div id="appendCommentModal" class="detail-modal"><div class="detail-card" style="max-width:400px;"><h3 style="margin-bottom:16px;">✏️ Дополнить комментарий</h3><p id="appendStopInfo" style="margin-bottom:12px;"></p><textarea id="appendCommentText" rows="3" placeholder="Введите дополнительный комментарий..." style="width:100%; border-radius:28px; padding:12px; border:1px solid #c8dce8;"></textarea><div class="modal-buttons" style="display:flex; gap:12px; margin-top:16px;"><button id="appendCancelBtn" style="flex:1; background:#eef2f5; border:none; padding:12px; border-radius:60px;">Отмена</button><button id="appendConfirmBtn" style="flex:1; background:#1a4b6e; color:white; border:none; padding:12px; border-radius:60px;">Добавить</button></div></div></div>
+<div id="nodeDetailModal" class="detail-modal"><div class="detail-card"><div class="detail-header"><span class="detail-title" id="detailTitle">KHS - Этикетка</span><button class="detail-close" id="detailCloseBtn">✕</button></div><div id="detailContent"></div></div></div>
+<script>
+    (function(){
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyDsL3t4-HjlA7koeUwcUVGwLIZgrU_Io9I",
+            authDomain: "zavodis-cecc0.firebaseapp.com",
+            projectId: "zavodis-cecc0",
+            storageBucket: "zavodis-cecc0.firebasestorage.app",
+            messagingSenderId: "995216266712",
+            appId: "1:995216266712:web:07973546db19cd8cd68ead"
+        };
+        
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        
+        // Состояние приложения
+        const STORAGE_KEY = 'khs_separate_data_final_v7';
+        const CUSTOM_REASONS_KEY = 'KHS_custom_reasons_v3';
+        const ALL_LINES = ['KHS', 'KHS2', 'KHS3', 'KOSME', 'Tech long', 'APET'];
+        const ALL_NODES = ['Розлив', 'Этикетка', 'Упаковка', 'Паллетайзер'];
+        let allData = {}, currentNodeKey = '', stopStartTime = null, hourlyInputs = [], selectedReason = null, selectedCustomReason = null, currentMode = 'operator', appendToStopId = null;
+        let isLoadingMaster = false;
+        
+        // Функция для получения ключа узла
+        function getNodeKey(l, n) { return `${l}_${n}`; }
+        
+        // Сохранение остановки в Firebase
+        async function syncStopToFirebase(stopData) {
+            try {
+                const stopId = Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+                const stopRef = database.ref(`stops/${stopData.line}/${stopData.node}/${stopId}`);
+                await stopRef.set({
+                    ...stopData,
+                    stopId: stopId,
+                    syncTime: firebase.database.ServerValue.TIMESTAMP
+                });
+                console.log('Остановка сохранена в Firebase');
+                return true;
+            } catch (error) {
+                console.error('Ошибка сохранения в Firebase:', error);
+                return false;
+            }
+        }
+        
+        // Сохранение статуса линии в Firebase
+        async function syncLineStatusToFirebase() {
+            try {
+                const d = getCurrentNodeData();
+                const line = document.getElementById('lineSelect').value;
+                const node = document.getElementById('nodeSelect').value;
+                const statusRef = database.ref(`status/${line}/${node}`);
+                await statusRef.set({
+                    isShiftStarted: d.isShiftStarted,
+                    isRunning: d.isRunning,
+                    fact: d.fact,
+                    plan: d.plan,
+                    efficiency: d.efficiency,
+                    operator: d.operator,
+                    product: d.product,
+                    materialStart: d.materialStart,
+                    materialIncome: d.materialIncome,
+                    defect: d.defect,
+                    materialEnd: d.materialEnd,
+                    expiryFrom: d.expiryFrom,
+                    expiryTo: d.expiryTo,
+                    shift: d.shift,
+                    reportDate: d.reportDate,
+                    hourlyValues: d.hourlyValues,
+                    lastUpdate: firebase.database.ServerValue.TIMESTAMP
+                });
+                console.log('Статус сохранён в Firebase');
+                return true;
+            } catch (error) {
+                console.error('Ошибка синхронизации статуса:', error);
+                return false;
+            }
+        }
+        
+        // Загрузка всех остановок из Firebase
+        async function loadAllStopsFromFirebase() {
+            const allStops = {};
+            try {
+                const stopsSnapshot = await database.ref('stops').once('value');
+                const stopsData = stopsSnapshot.val();
+                if (stopsData) {
+                    for (const line in stopsData) {
+                        for (const node in stopsData[line]) {
+                            const key = `${line}_${node}`;
+                            allStops[key] = [];
+                            for (const stopId in stopsData[line][node]) {
+                                allStops[key].push(stopsData[line][node][stopId]);
+                            }
+                            allStops[key].sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                        }
+                    }
+                }
+                return allStops;
+            } catch (error) {
+                console.error('Ошибка загрузки остановок из Firebase:', error);
+                return allStops;
+            }
+        }
+        
+        // Загрузка статусов из Firebase
+        async function loadAllStatusesFromFirebase() {
+            const statuses = {};
+            try {
+                const statusSnapshot = await database.ref('status').once('value');
+                const statusData = statusSnapshot.val();
+                if (statusData) {
+                    for (const line in statusData) {
+                        for (const node in statusData[line]) {
+                            statuses[`${line}_${node}`] = statusData[line][node];
+                        }
+                    }
+                }
+                return statuses;
+            } catch (error) {
+                console.error('Ошибка загрузки статусов из Firebase:', error);
+                return statuses;
+            }
+        }
+        
+        // Оригинальные функции
+        function getCurrentNodeData(){ let l=document.getElementById('lineSelect').value, n=document.getElementById('nodeSelect').value; currentNodeKey=getNodeKey(l,n); if(!allData[currentNodeKey]) allData[currentNodeKey]={line:l,node:n,isRunning:false,isShiftStarted:false,stops:[],fact:0,plan:48000,speed:4000,efficiency:'0%',operator:'',product:'Вода «Святой источник»',materialStart:50000,materialIncome:0,defect:0,materialEnd:50000,expiryFrom:'01.06.2026',expiryTo:'01.06.2027',shift:'day',reportDate:new Date().toISOString().slice(0,10),hourlyValues:[0,0,0,0,0,0,0,0,0,0,0,0],lastUpdate:new Date().toLocaleTimeString()}; return allData[currentNodeKey]; }
+        function saveCurrentNodeData(){ let d=getCurrentNodeData(); d.isRunning=(document.getElementById('statusText').innerText==='РАБОТАЕТ'); d.fact=parseInt(document.getElementById('factDisplay').innerText)||0; d.plan=parseInt(document.getElementById('planShift').value)||48000; d.speed=parseInt(document.getElementById('machineSpeed').value)||4000; d.efficiency=document.getElementById('efficiencyDisplay').innerText; d.operator=document.getElementById('operatorName').value; d.product=document.getElementById('productName').value; d.materialStart=parseInt(document.getElementById('materialStart').value)||0; d.materialIncome=parseInt(document.getElementById('materialIncome').value)||0; d.defect=parseInt(document.getElementById('defectAmount').value)||0; d.materialEnd=parseInt(document.getElementById('materialEnd').value)||0; d.expiryFrom=document.getElementById('expiryFrom').value; d.expiryTo=document.getElementById('expiryTo').value; d.shift=document.getElementById('shiftSelect').value; d.reportDate=document.getElementById('reportDate').value; d.hourlyValues=hourlyInputs.map(i=>parseInt(i.value)||0); d.lastUpdate=new Date().toLocaleTimeString(); localStorage.setItem(STORAGE_KEY,JSON.stringify(allData)); if(currentMode==='master') renderMasterList().catch(console.error); syncLineStatusToFirebase(); }
+        function loadNodeDataToUI(){ let d=getCurrentNodeData(); document.getElementById('shiftSelect').value=d.shift; rebuildHourlyTable(); if(d.isShiftStarted){ document.getElementById('statusText').innerText=d.isRunning?'РАБОТАЕТ':'ОСТАНОВЛЕНА'; document.getElementById('statusIcon').innerText=d.isRunning?'🟢':'🔴'; document.getElementById('startShiftBtn').style.display='none'; document.getElementById('startLineBtn').style.display='flex'; document.getElementById('openStopModalBtn').style.display='flex'; document.getElementById('openCustomStopModalBtn').style.display='flex'; } else { document.getElementById('statusText').innerText='СМЕНА НЕ НАЧАТА'; document.getElementById('statusIcon').innerText='⚪'; document.getElementById('startShiftBtn').style.display='flex'; document.getElementById('startLineBtn').style.display='none'; document.getElementById('openStopModalBtn').style.display='none'; document.getElementById('openCustomStopModalBtn').style.display='none'; }
+        document.getElementById('factDisplay').innerText=d.fact; document.getElementById('planShift').value=d.plan; document.getElementById('machineSpeed').value=d.speed; document.getElementById('efficiencyDisplay').innerText=d.efficiency; document.getElementById('operatorName').value=d.operator; document.getElementById('productName').value=d.product; document.getElementById('materialStart').value=d.materialStart; document.getElementById('materialIncome').value=d.materialIncome; document.getElementById('defectAmount').value=d.defect; document.getElementById('materialEnd').value=d.materialEnd; document.getElementById('expiryFrom').value=d.expiryFrom; document.getElementById('expiryTo').value=d.expiryTo; document.getElementById('reportDate').value=d.reportDate;
+        if(hourlyInputs.length===12) for(let i=0;i<12;i++) hourlyInputs[i].value=d.hourlyValues[i]||0;
+        document.body.classList.toggle('line-stopped',d.isShiftStarted&&!d.isRunning); renderStopsLog(); updateEfficiencyDisplay(); calculateMaterialEndDisplay(); }
+        function updateEfficiencyDisplay(){ let plan=parseInt(document.getElementById('planShift').value)||1, fact=parseInt(document.getElementById('factDisplay').innerText)||0; document.getElementById('efficiencyDisplay').innerText=((fact/plan)*100).toFixed(1)+'%'; }
+        function calculateMaterialEndDisplay(){ let start=parseInt(document.getElementById('materialStart').value)||0, income=parseInt(document.getElementById('materialIncome').value)||0, defect=parseInt(document.getElementById('defectAmount').value)||0, fact=parseInt(document.getElementById('factDisplay').innerText)||0; document.getElementById('materialEnd').value=Math.max(0,start+income-(fact+defect)); }
+        function rebuildHourlyTable(){ let shift=document.getElementById('shiftSelect').value, hours=shift==='day'?['07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19']:['19-20','20-21','21-22','22-23','23-00','00-01','01-02','02-03','03-04','04-05','05-06','06-07']; let tbody=document.getElementById('hourlyTbody'); tbody.innerHTML=''; hourlyInputs=[]; for(let i=0;i<12;i++){ let tr=document.createElement('tr'); tr.innerHTML=`<td>${hours[i]}</td><td><input type="number" class="hour-input" value="0" min="0" step="100"></td>`; let inp=tr.querySelector('input'); inp.addEventListener('change',()=>{ updateFactFromHours(); saveCurrentNodeData(); }); tbody.appendChild(tr); hourlyInputs.push(inp); } }
+        function updateFactFromHours(){ let max=0; hourlyInputs.forEach(i=>{ let v=parseInt(i.value)||0; if(v>max)max=v; }); document.getElementById('factDisplay').innerText=max; updateEfficiencyDisplay(); calculateMaterialEndDisplay(); saveCurrentNodeData(); }
+        function startShift(){ let d=getCurrentNodeData(); if(d.isShiftStarted)return; d.isShiftStarted=true; d.isRunning=true; d.stops=[]; d.fact=0; d.hourlyValues=[0,0,0,0,0,0,0,0,0,0,0,0]; stopStartTime=null; document.getElementById('statusText').innerText='РАБОТАЕТ'; document.getElementById('statusIcon').innerText='🟢'; document.getElementById('factDisplay').innerText='0'; updateEfficiencyDisplay(); calculateMaterialEndDisplay(); for(let i=0;i<hourlyInputs.length;i++) hourlyInputs[i].value=0; document.getElementById('startShiftBtn').style.display='none'; document.getElementById('startLineBtn').style.display='flex'; document.getElementById('openStopModalBtn').style.display='flex'; document.getElementById('openCustomStopModalBtn').style.display='flex'; renderStopsLog(); saveCurrentNodeData(); document.body.classList.remove('line-stopped'); if(currentMode==='master')renderMasterList().catch(console.error); syncLineStatusToFirebase(); }
+        function startLine(){ let d=getCurrentNodeData(); if(!d.isShiftStarted||d.isRunning)return; if(stopStartTime&&d.stops.length&&!d.stops[d.stops.length-1].endTimeStr){ d.stops[d.stops.length-1].durationSec=Math.floor((Date.now()-stopStartTime)/1000); d.stops[d.stops.length-1].endTimeStr=new Date().toLocaleTimeString(); } d.isRunning=true; stopStartTime=null; document.getElementById('statusText').innerText='РАБОТАЕТ'; document.getElementById('statusIcon').innerText='🟢'; document.body.classList.remove('line-stopped'); saveCurrentNodeData(); renderStopsLog(); syncLineStatusToFirebase(); }
+        function stopLine(reason, comment){ let d=getCurrentNodeData(); if(!d.isShiftStarted||!d.isRunning)return; d.isRunning=false; stopStartTime=Date.now(); const stopObj={reason:reason,comment:comment.trim()||'—',startTimeStr:new Date().toLocaleTimeString(),endTimeStr:null,durationSec:null,fullComment:comment.trim()||'—',timestamp:Date.now(),line:document.getElementById('lineSelect').value,node:document.getElementById('nodeSelect').value,operator:document.getElementById('operatorName').value}; d.stops.push(stopObj); document.getElementById('statusText').innerText='ОСТАНОВЛЕНА'; document.getElementById('statusIcon').innerText='🔴'; document.body.classList.add('line-stopped'); saveCurrentNodeData(); renderStopsLog(); syncStopToFirebase(stopObj); }
+        function addManualStop(reason,startDateTime,endDateTime,comment){ let d=getCurrentNodeData(); if(!d.isShiftStarted)return false; let startDate=new Date(startDateTime), endDate=new Date(endDateTime); if(isNaN(startDate)||isNaN(endDate)||endDate<=startDate){alert("Укажите корректные дату и время");return false;} let durationSec=Math.floor((endDate-startDate)/1000); const stopObj={reason:reason,comment:comment.trim()||'—',startTimeStr:startDate.toLocaleString(),endTimeStr:endDate.toLocaleString(),durationSec:durationSec,fullComment:comment.trim()||'—',timestamp:Date.now(),isManual:true,line:document.getElementById('lineSelect').value,node:document.getElementById('nodeSelect').value,operator:document.getElementById('operatorName').value}; d.stops.push(stopObj); saveCurrentNodeData(); renderStopsLog(); syncStopToFirebase(stopObj); alert(`Остановка добавлена! Длительность: ${Math.floor(durationSec/60)} мин`); return true; }
+        function appendCommentToStop(stopId,extra){ let d=getCurrentNodeData(); if(stopId<0||stopId>=d.stops.length)return false; let s=d.stops[stopId]; s.fullComment=(s.fullComment||s.comment||'')+" | ✏️ "+extra; s.comment=s.fullComment; saveCurrentNodeData(); renderStopsLog(); return true; }
+        function renderStopsLog(){ let d=getCurrentNodeData(), logDiv=document.getElementById('stopsLog'); if(!d.isShiftStarted){logDiv.innerHTML='— Смена не начата —';return;} if(d.stops.length===0){logDiv.innerHTML='— Нет записей —';return;} let html=''; d.stops.slice().reverse().forEach((stop,idx)=>{ let originalIndex=d.stops.length-1-idx, durStr=stop.durationSec!==null?`${stop.durationSec} сек (${(stop.durationSec/60).toFixed(1)} мин)`:'⏳ в процессе'; html+=`<div class="log-item"><div class="log-header"><span><strong>⛔ ${escapeHtml(stop.reason)}</strong> <span>${stop.startTimeStr} → ${stop.endTimeStr||'активный'}</span></span><span>⏱️ ${durStr}</span></div><div class="log-comment">📝 ${escapeHtml(stop.fullComment||stop.comment)}</div><button class="comment-btn" data-idx="${originalIndex}">✏️ Добавить комментарий</button></div>`; }); logDiv.innerHTML=html; document.querySelectorAll('.comment-btn').forEach(btn=>{ btn.addEventListener('click',(e)=>{ let idx=parseInt(btn.getAttribute('data-idx'),10); if(!isNaN(idx)){ appendToStopId=idx; let stop=d.stops[idx]; document.getElementById('appendStopInfo').innerHTML=`Остановка: <strong>${escapeHtml(stop.reason)}</strong><br>Текущий комментарий: «${escapeHtml(stop.fullComment||stop.comment)}»`; document.getElementById('appendCommentText').value=''; document.getElementById('appendCommentModal').style.display='flex'; } }); }); }
+        function resetSession(){ if(!confirm('Сбросить все данные текущего узла? Смена будет завершена!'))return; let d=getCurrentNodeData(); d.isShiftStarted=false; d.isRunning=false; d.stops=[]; d.fact=0; d.operator=''; d.materialStart=50000; d.materialIncome=0; d.defect=0; d.materialEnd=50000; d.hourlyValues=[0,0,0,0,0,0,0,0,0,0,0,0]; stopStartTime=null; loadNodeDataToUI(); saveCurrentNodeData(); renderStopsLog(); document.body.classList.remove('line-stopped'); syncLineStatusToFirebase(); }
+        function updateTimer(){ let d=getCurrentNodeData(); if(d.isShiftStarted&&!d.isRunning&&stopStartTime){ let elapsed=Math.floor((Date.now()-stopStartTime)/1000); document.getElementById('downtimeTimer').innerHTML=`${Math.floor(elapsed/3600).toString().padStart(2,'0')}:${Math.floor((elapsed%3600)/60).toString().padStart(2,'0')}:${(elapsed%60).toString().padStart(2,'0')}`; } else { document.getElementById('downtimeTimer').innerHTML='00:00:00'; } }
+        function generateReportHTML(){ let d=getCurrentNodeData(), line=document.getElementById('lineSelect').value, node=document.getElementById('nodeSelect').value, date=document.getElementById('reportDate').value; let stopsRows=''; d.stops.forEach(s=>{ stopsRows+=`<tr style="background:#fff7f0;"><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(s.reason)}</td><td style="padding:8px;border:1px solid #ddd;">${s.startTimeStr}</td><td style="padding:8px;border:1px solid #ddd;">${s.endTimeStr||'активен'}</td><td style="padding:8px;border:1px solid #ddd;">${s.durationSec??'...'}</td><td style="padding:8px;border:1px solid #ddd;">${escapeHtml(s.fullComment||s.comment)}</td></tr>`; }); let hourRows='', hourLabels=document.getElementById('shiftSelect').value==='day'?['07-08','08-09','09-10','10-11','11-12','12-13','13-14','14-15','15-16','16-17','17-18','18-19']:['19-20','20-21','21-22','22-23','23-00','00-01','01-02','02-03','03-04','04-05','05-06','06-07']; for(let i=0;i<hourlyInputs.length;i++) hourRows+=`<tr><td style="padding:8px;border:1px solid #ddd;">${hourLabels[i]}</td><td style="padding:8px;border:1px solid #ddd;">${hourlyInputs[i].value||0}</td></tr>`; return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ${line} ${node}</title><style>body{font-family:'Segoe UI',sans-serif;margin:20px;background:#f0f7fc;}h1{color:#1a4b6e;}h2{color:#1e7b48;margin-top:25px;}table{width:100%;border-collapse:collapse;margin-bottom:20px;background:white;}th{background:#1a4b6e;color:white;padding:12px;text-align:left;}td{padding:8px;border:1px solid #c8dce8;}.print-excel{display:flex;gap:15px;margin:20px 0;}button{background:#2e7d32;color:white;border:none;padding:10px 20px;border-radius:30px;cursor:pointer;font-weight:bold;}button:hover{opacity:0.9;}</style><script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"><\/script></head><body><h1>📋 ОТЧЁТ ПО ЛИНИИ: ${line} — ${node}</h1><div><p><strong>📅 Дата:</strong> ${date}</p><p><strong>👤 Оператор:</strong> ${escapeHtml(d.operator)}</p><p><strong>🏷️ Продукция:</strong> ${escapeHtml(d.product)}</p><p><strong>🕒 Смена:</strong> ${d.shift==='day'?'ДЕНЬ (07-19)':'НОЧЬ (19-07)'}</p><p><strong>📦 Остаток материала (нач):</strong> ${d.materialStart} шт &nbsp;| <strong>➕ Приход:</strong> ${d.materialIncome} &nbsp;| <strong>⚠️ Брак:</strong> ${d.defect} &nbsp;| <strong>📦 Остаток (кон):</strong> ${d.materialEnd}</p><p><strong>📊 Факт:</strong> ${d.fact} шт / <strong>План:</strong> ${d.plan} шт → <strong>Эффективность:</strong> ${d.efficiency}</p></div><h2>⏱️ Почасовая выработка (накоплено)</h2><table><thead><tr><th>Час</th><th>Накоплено, шт</th></tr></thead><tbody>${hourRows}</tbody></table><h2>🛑 Журнал остановок</h2><table><thead><tr><th>Причина</th><th>Начало</th><th>Конец</th><th>Длит.</th><th>Комментарий</th></tr></thead><tbody>${stopsRows||'<tr><td colspan="5">Нет остановок</td></tr>'}</tbody></table><div class="print-excel"><button onclick="window.print()">🖨️ Печать отчёта</button><button id="exportExcelBtn">📎 Экспорт в Excel</button></div><script>document.getElementById('exportExcelBtn').addEventListener('click',function(){let htmlContent=document.documentElement.outerHTML;let blob=new Blob([htmlContent],{type:'application/vnd.ms-excel'});let link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='report_${line}_${node}_${date}.xls';link.click();});<\/script></body></html>`; }
+        function exportHtmlReport(){ let html=generateReportHTML(); let blob=new Blob([html],{type:'text/html'}); let link=document.createElement('a'); link.download=`report_${document.getElementById('lineSelect').value}_${document.getElementById('nodeSelect').value}_${document.getElementById('reportDate').value}.html`; link.href=URL.createObjectURL(blob); link.click(); }
+        
+        // Основная функция рендеринга мастера - ИСПРАВЛЕНА
+        async function renderMasterList() {
+            if (isLoadingMaster) return;
+            isLoadingMaster = true;
+            
+            try {
+                // Показываем индикатор загрузки
+                const container = document.getElementById('masterLinesList');
+                if (container && (!container.innerHTML || container.innerHTML.includes('Загрузка'))) {
+                    container.innerHTML = '<div class="loading-spinner">🔄 Загрузка данных...</div>';
+                }
+                
+                // Загружаем данные из Firebase параллельно
+                const [cloudStops, cloudStatuses] = await Promise.all([
+                    loadAllStopsFromFirebase(),
+                    loadAllStatusesFromFirebase()
+                ]);
+                
+                // Загружаем локальные данные
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    try {
+                        const localData = JSON.parse(saved);
+                        // Объединяем с облачными данными, приоритет у облачных
+                        for (let key in localData) {
+                            if (!allData[key]) allData[key] = localData[key];
+                        }
+                    } catch(e) { console.error('Ошибка загрузки локальных данных:', e); }
+                }
+                
+                // Создаём или обновляем структуру данных с облачными данными
+                for (let l of ALL_LINES) {
+                    for (let n of ALL_NODES) {
+                        const key = getNodeKey(l, n);
+                        const status = cloudStatuses[`${l}_${n}`] || {};
+                        const stops = cloudStops[`${l}_${n}`] || [];
+                        
+                        if (!allData[key]) {
+                            allData[key] = {
+                                line: l,
+                                node: n,
+                                isRunning: false,
+                                isShiftStarted: false,
+                                stops: [],
+                                fact: 0,
+                                plan: 48000,
+                                speed: 4000,
+                                efficiency: '0%',
+                                operator: '',
+                                product: 'Вода «Святой источник»',
+                                materialStart: 50000,
+                                materialIncome: 0,
+                                defect: 0,
+                                materialEnd: 50000,
+                                expiryFrom: '01.06.2026',
+                                expiryTo: '01.06.2027',
+                                shift: 'day',
+                                reportDate: new Date().toISOString().slice(0, 10),
+                                hourlyValues: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+                                lastUpdate: new Date().toLocaleTimeString()
+                            };
+                        }
+                        
+                        // Обновляем статус из облака
+                        if (Object.keys(status).length > 0) {
+                            allData[key].isShiftStarted = status.isShiftStarted || false;
+                            allData[key].isRunning = status.isRunning || false;
+                            allData[key].fact = status.fact || 0;
+                            allData[key].plan = status.plan || 48000;
+                            allData[key].efficiency = status.efficiency || '0%';
+                            allData[key].operator = status.operator || '';
+                            allData[key].product = status.product || allData[key].product;
+                            allData[key].materialStart = status.materialStart || allData[key].materialStart;
+                            allData[key].materialIncome = status.materialIncome || allData[key].materialIncome;
+                            allData[key].defect = status.defect || allData[key].defect;
+                            allData[key].materialEnd = status.materialEnd || allData[key].materialEnd;
+                            allData[key].shift = status.shift || allData[key].shift;
+                            allData[key].lastUpdate = status.lastUpdate ? new Date(status.lastUpdate).toLocaleTimeString() : new Date().toLocaleTimeString();
+                        }
+                        
+                        // Обновляем остановки из облака, избегая дублирования
+                        if (stops.length > 0) {
+                            for (const stop of stops) {
+                                const exists = allData[key].stops.some(s => s.timestamp === stop.timestamp);
+                                if (!exists && stop.timestamp) {
+                                    allData[key].stops.push(stop);
+                                }
+                            }
+                            allData[key].stops.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+                        }
+                    }
+                }
+                
+                // Подсчёт статистики
+                const allNodes = Object.values(allData);
+                const totalNodes = allNodes.length;
+                const runningNodes = allNodes.filter(n => n.isShiftStarted && n.isRunning).length;
+                const stoppedNodes = allNodes.filter(n => n.isShiftStarted && !n.isRunning).length;
+                
+                document.getElementById('masterTotalNodes').innerText = totalNodes;
+                document.getElementById('masterRunningNodes').innerText = runningNodes;
+                document.getElementById('masterStoppedNodes').innerText = stoppedNodes;
+                
+                // Группировка по линиям
+                const grouped = {};
+                for (let node of allNodes) {
+                    if (!grouped[node.line]) grouped[node.line] = [];
+                    grouped[node.line].push(node);
+                }
+                
+                // Отрисовка списка
+                let html = '';
+                for (let lineName of ALL_LINES) {
+                    let nodes = grouped[lineName] || [];
+                    if (nodes.length === 0) continue;
+                    html += `<div class="line-group-card">
+                                <div class="line-title">🏭 ${lineName}</div>
+                                <div class="nodes-list">`;
+                    for (let node of nodes) {
+                        let statusClass, statusTextClass, statusText, statusDot;
+                        if (!node.isShiftStarted) {
+                            statusClass = 'status-dot-inactive';
+                            statusTextClass = 'status-text-inactive';
+                            statusText = 'Смена не начата';
+                            statusDot = '⚪';
+                        } else if (node.isRunning) {
+                            statusClass = 'status-dot-running';
+                            statusTextClass = 'status-text-running';
+                            statusText = 'В работе';
+                            statusDot = '🟢';
+                        } else {
+                            statusClass = 'status-dot-stopped';
+                            statusTextClass = 'status-text-stopped';
+                            statusText = 'Остановлен';
+                            statusDot = '🔴';
+                        }
+                        html += `<div class="node-item" data-line="${node.line}" data-node="${node.node}">
+                                    <div class="node-info">
+                                        <div class="status-dot ${statusClass}"></div>
+                                        <div class="node-name">${escapeHtml(node.node)}</div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <span class="status-text-master ${statusTextClass}">${statusDot} ${statusText}</span>
+                                        <span class="arrow-icon">▶</span>
+                                    </div>
+                                </div>`;
+                    }
+                    html += `</div></div>`;
+                }
+                
+                if (container) container.innerHTML = html;
+                
+                // Привязываем обработчики кликов
+                document.querySelectorAll('.node-item').forEach(el => {
+                    el.removeEventListener('click', nodeClickHandler);
+                    el.addEventListener('click', nodeClickHandler);
+                });
+                
+                document.getElementById('masterLastUpdate').innerHTML = new Date().toLocaleTimeString();
+                
+            } catch (error) {
+                console.error('Ошибка загрузки данных мастера:', error);
+                const container = document.getElementById('masterLinesList');
+                if (container) {
+                    container.innerHTML = '<div class="error-message">❌ Ошибка загрузки данных. Проверьте подключение к интернету и Firebase.</div>';
+                }
+            } finally {
+                isLoadingMaster = false;
+            }
+        }
+        
+        // Обработчик клика по узлу
+        function nodeClickHandler(e) {
+            const el = e.currentTarget;
+            const line = el.getAttribute('data-line');
+            const node = el.getAttribute('data-node');
+            showNodeDetail(line, node);
+        }
+        
+        function showNodeDetail(line, node){ let key=getNodeKey(line,node), data=allData[key]; if(!data)return; let statusText,statusColor; if(!data.isShiftStarted){ statusText='Смена не начата ⚪'; statusColor='#8ba3bc'; } else if(data.isRunning){ statusText='В работе 🟢'; statusColor='#1e7b48'; } else { statusText='Остановлен 🔴'; statusColor='#c2412c'; } let stopsHtml=''; if(data.stops&&data.stops.length>0){ stopsHtml=data.stops.map(s=>{ let duration=s.durationSec?`${Math.floor(s.durationSec/60)} мин ${s.durationSec%60} сек`:'в процессе'; return `<div class="detail-stop-item"><div class="detail-stop-reason"><span>⛔ ${escapeHtml(s.reason)}</span><span class="detail-stop-time">${duration}</span></div><div class="detail-stop-time">🕐 ${s.startTimeStr} → ${s.endTimeStr||'сейчас'}</div><div class="detail-stop-comment">📝 ${escapeHtml(s.fullComment||s.comment||'—')}</div></div>`; }).join(''); } else { stopsHtml='<div style="text-align:center; padding:20px; color:#8ba3bc;">✅ Нет остановок</div>'; } let detailContent=`<div class="detail-info-row"><div class="detail-label">📦 Линия / Узел</div><div class="detail-value">${line} / ${node}</div></div><div class="detail-info-row"><div class="detail-label">👤 Оператор</div><div class="detail-value">${escapeHtml(data.operator||'—')}</div></div><div class="detail-info-row"><div class="detail-label">📊 Статус</div><div class="detail-value" style="color:${statusColor};">${statusText}</div></div><div class="detail-info-row"><div class="detail-label">🏷️ Продукция</div><div class="detail-value">${escapeHtml(data.product||'—')}</div></div><div class="detail-info-row"><div class="detail-label">📈 Выработка</div><div class="detail-value">${(data.fact||0).toLocaleString()} / ${(data.plan||0).toLocaleString()} шт (${data.efficiency||'0%'})</div></div><div class="detail-stops"><div style="font-weight:700; margin-bottom:12px;">📋 Остановки (${data.stops?.length||0})</div>${stopsHtml}</div><button class="detail-btn" id="detailReportBtn">📄 HTML-отчёт по узлу</button>`; document.getElementById('detailTitle').innerHTML=`${line} - ${node}`; document.getElementById('detailContent').innerHTML=detailContent; document.getElementById('nodeDetailModal').style.display='flex'; document.getElementById('detailReportBtn').onclick=()=>{ let now=new Date(); let stopsRows=''; data.stops.forEach(s=>{ stopsRows+=`<li><strong>${escapeHtml(s.reason)}</strong> (${s.startTimeStr} → ${s.endTimeStr||'активна'})<br>💬 ${escapeHtml(s.fullComment||s.comment)}</li>`; }); let reportHtml=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Отчёт ${line} ${node}</title><style>body{font-family:system-ui;margin:30px;background:#eef4fa;}h1{color:#1a4b6e;}h3{color:#1e7b48;}table{width:100%;border-collapse:collapse;background:white;}th{background:#1a4b6e;color:white;padding:8px;}td{padding:6px;border:1px solid #ccc;}.btn-group{display:flex;gap:15px;margin:20px 0;}button{padding:10px 20px;border-radius:30px;border:none;background:#2e7d32;color:white;font-weight:bold;cursor:pointer;}</style><script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"><\/script></head><body><h1>📊 Отчёт ${line} - ${node}</h1><p><strong>📅 Дата/время:</strong> ${now.toLocaleString()}</p><p><strong>👤 Оператор:</strong> ${escapeHtml(data.operator)}</p><p><strong>🏷️ Продукция:</strong> ${escapeHtml(data.product)}</p><p><strong>🕒 Смена:</strong> ${data.shift==='day'?'ДЕНЬ':'НОЧЬ'}</p><p><strong>📦 Остаток материала (нач):</strong> ${data.materialStart} | <strong>Приход:</strong> ${data.materialIncome} | <strong>Брак:</strong> ${data.defect} | <strong>Остаток (кон):</strong> ${data.materialEnd}</p><p><strong>📈 Факт:</strong> ${data.fact} / <strong>План:</strong> ${data.plan} → <strong>Эффективность:</strong> ${data.efficiency}</p><h3>🛑 Остановки:</h3><ul>${stopsRows||'<li>Нет остановок</li>'}</ul><div class="btn-group"><button onclick="window.print()">🖨️ Печать</button><button id="excelBtn">📎 Экспорт в Excel</button></div><script>document.getElementById('excelBtn').addEventListener('click',function(){let htmlContent=document.documentElement.outerHTML;let blob=new Blob([htmlContent],{type:'application/vnd.ms-excel'});let link=document.createElement('a');link.href=URL.createObjectURL(blob);link.download='detail_report_${line}_${node}.xls';link.click();});<\/script></body></html>`; let blob=new Blob([reportHtml],{type:'text/html'}); let link=document.createElement('a'); link.download=`detail_report_${line}_${node}_${now.toISOString().slice(0,19)}.html`; link.href=URL.createObjectURL(blob); link.click(); }; }
+        function loadCustomReasons(){ let saved=localStorage.getItem(CUSTOM_REASONS_KEY); if(saved)try{return JSON.parse(saved);}catch(e){} return []; }
+        function saveCustomReason(reason){ let reasons=loadCustomReasons(); if(!reasons.includes(reason)&&reason.trim()){ reasons.unshift(reason); if(reasons.length>12)reasons.pop(); localStorage.setItem(CUSTOM_REASONS_KEY,JSON.stringify(reasons)); } renderCustomReasons(); renderCustomReasons2(); }
+        function deleteCustomReason(reason){ let reasons=loadCustomReasons().filter(r=>r!==reason); localStorage.setItem(CUSTOM_REASONS_KEY,JSON.stringify(reasons)); renderCustomReasons(); renderCustomReasons2(); }
+        function renderCustomReasons(){ let container=document.getElementById('savedReasonsList'); if(!container)return; let reasons=loadCustomReasons(); container.innerHTML=''; reasons.forEach(r=>{ let btn=document.createElement('button'); btn.textContent=r; btn.className='saved-note-btn'; btn.addEventListener('click',()=>{ selectedReason=r; document.querySelectorAll('#reasonGrid .reason-opt').forEach(b=>b.classList.remove('selected')); btn.style.background='#cfe3f0'; btn.style.border='2px solid #1a4b6e'; }); btn.addEventListener('contextmenu',(e)=>{ e.preventDefault(); if(confirm(`Удалить "${r}"?`)) deleteCustomReason(r); }); container.appendChild(btn); }); }
+        function renderCustomReasons2(){ let container=document.getElementById('savedReasonsList2'); if(!container)return; let reasons=loadCustomReasons(); container.innerHTML=''; reasons.forEach(r=>{ let btn=document.createElement('button'); btn.textContent=r; btn.className='saved-note-btn'; btn.addEventListener('click',()=>{ selectedCustomReason=r; document.querySelectorAll('#customReasonGrid .reason-opt').forEach(b=>b.classList.remove('selected')); btn.style.background='#cfe3f0'; btn.style.border='2px solid #1a4b6e'; }); btn.addEventListener('contextmenu',(e)=>{ e.preventDefault(); if(confirm(`Удалить "${r}"?`)) deleteCustomReason(r); }); container.appendChild(btn); }); }
+        function escapeHtml(str){ if(!str)return ''; return String(str).replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m])); }
+        function loadAllSavedData(){ let saved=localStorage.getItem(STORAGE_KEY); if(saved)try{const parsed=JSON.parse(saved); for(let k in parsed){ if(allData[k]){ Object.assign(allData[k], parsed[k]); } else { allData[k]=parsed[k]; } } }catch(e){} for(let l of ALL_LINES) for(let n of ALL_NODES){ let k=getNodeKey(l,n); if(!allData[k]) allData[k]={line:l,node:n,isRunning:false,isShiftStarted:false,stops:[],fact:0,plan:48000,speed:4000,efficiency:'0%',operator:'',product:'Вода «Святой источник»',materialStart:50000,materialIncome:0,defect:0,materialEnd:50000,expiryFrom:'01.06.2026',expiryTo:'01.06.2027',shift:'day',reportDate:new Date().toISOString().slice(0,10),hourlyValues:[0,0,0,0,0,0,0,0,0,0,0,0],lastUpdate:new Date().toLocaleTimeString()}; } }
+        function setMode(mode){ 
+            currentMode=mode; 
+            document.getElementById('operatorMode').style.display=mode==='operator'?'block':'none'; 
+            document.getElementById('masterMode').style.display=mode==='master'?'block':'none'; 
+            document.querySelectorAll('.mode-btn').forEach(btn=>{ btn.classList.toggle('active',btn.getAttribute('data-mode')===mode); }); 
+            if(mode==='master'){ 
+                renderMasterList().catch(console.error); 
+                if(window.masterInterval)clearInterval(window.masterInterval); 
+                window.masterInterval=setInterval(()=>{ 
+                    loadAllSavedData(); 
+                    renderMasterList().catch(console.error); 
+                }, 10000); // Обновление каждые 10 секунд
+            } else { 
+                if(window.masterInterval)clearInterval(window.masterInterval); 
+                loadNodeDataToUI(); 
+            } 
+        }
+        function calculateStickers(){ let kg=parseFloat(document.getElementById('stickerKg').value)||0, g=parseFloat(document.getElementById('stickerGram').value)||0, totalGram=(kg*1000)+g, core=parseFloat(document.getElementById('coreWeight').value)||10, weightOne=parseFloat(document.getElementById('weightPerSticker').value)||0.0366667, netGram=totalGram-core, remaining=netGram>0?Math.floor(netGram/weightOne):0; document.getElementById('stickerRemaining').innerHTML=remaining.toLocaleString()+' шт'; document.getElementById('stickerMsg').innerHTML=netGram>0?`✅ Остаток: ${remaining.toLocaleString()} шт. (нетто ${(netGram/1000).toFixed(3)} кг)`:'⚠️ Вес меньше или равен втулке'; }
+        function setupEventListeners(){ document.querySelectorAll('.mode-btn').forEach(btn=>btn.addEventListener('click',()=>setMode(btn.getAttribute('data-mode')))); document.querySelectorAll('.tab-btn').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('#operatorMode .tab-content').forEach(t=>t.classList.remove('active')); document.getElementById(btn.getAttribute('data-tab')+'Tab').classList.add('active'); })); document.getElementById('startShiftBtn').addEventListener('click',startShift); document.getElementById('startLineBtn').addEventListener('click',startLine); document.getElementById('openStopModalBtn').addEventListener('click',()=>document.getElementById('stopModal').style.display='flex'); document.getElementById('openCustomStopModalBtn').addEventListener('click',()=>{ let now=new Date(); document.getElementById('customStopStart').value=now.toISOString().slice(0,16); document.getElementById('customStopEnd').value=new Date(now.getTime()+3600000).toISOString().slice(0,16); document.getElementById('customStopComment').value=''; selectedCustomReason=null; document.querySelectorAll('#customReasonGrid .reason-opt').forEach(b=>b.classList.remove('selected')); document.getElementById('customStopModal').style.display='flex'; }); document.getElementById('exportHtmlBtn').addEventListener('click',exportHtmlReport); document.getElementById('resetSessionBtn').addEventListener('click',resetSession); document.getElementById('masterRefreshBtn').addEventListener('click',()=>{ loadAllSavedData(); renderMasterList().catch(console.error); }); document.getElementById('saveCustomReasonBtn').addEventListener('click',()=>{ let r=document.getElementById('newCustomReason').value.trim(); if(r){saveCustomReason(r); document.getElementById('newCustomReason').value='';} }); document.getElementById('saveCustomReasonBtn2').addEventListener('click',()=>{ let r=document.getElementById('newCustomReason2').value.trim(); if(r){saveCustomReason(r); document.getElementById('newCustomReason2').value='';} }); document.querySelectorAll('#reasonGrid .reason-opt').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('#reasonGrid .reason-opt').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); selectedReason=btn.getAttribute('data-reason'); })); document.querySelectorAll('#customReasonGrid .reason-opt').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelectorAll('#customReasonGrid .reason-opt').forEach(b=>b.classList.remove('selected')); btn.classList.add('selected'); selectedCustomReason=btn.getAttribute('data-reason'); })); document.getElementById('modalConfirmBtn').addEventListener('click',()=>{ if(!selectedReason){alert('Выберите причину остановки!');return;} stopLine(selectedReason,document.getElementById('modalComment').value); document.getElementById('stopModal').style.display='none'; document.getElementById('modalComment').value=''; selectedReason=null; }); document.getElementById('modalCancelBtn').addEventListener('click',()=>document.getElementById('stopModal').style.display='none'); document.getElementById('customStopApplyBtn').addEventListener('click',()=>{ if(!selectedCustomReason){alert('Выберите причину остановки!');return;} addManualStop(selectedCustomReason,document.getElementById('customStopStart').value,document.getElementById('customStopEnd').value,document.getElementById('customStopComment').value); document.getElementById('customStopModal').style.display='none'; }); document.getElementById('customStopCancelBtn').addEventListener('click',()=>document.getElementById('customStopModal').style.display='none'); document.getElementById('appendConfirmBtn').addEventListener('click',()=>{ if(appendToStopId!==null){ let extra=document.getElementById('appendCommentText').value.trim(); if(extra)appendCommentToStop(appendToStopId,extra); document.getElementById('appendCommentModal').style.display='none'; appendToStopId=null; } }); document.getElementById('appendCancelBtn').addEventListener('click',()=>{ document.getElementById('appendCommentModal').style.display='none'; appendToStopId=null; }); document.getElementById('detailCloseBtn').addEventListener('click',()=>document.getElementById('nodeDetailModal').style.display='none'); document.getElementById('nodeDetailModal').addEventListener('click',(e)=>{ if(e.target===document.getElementById('nodeDetailModal')) document.getElementById('nodeDetailModal').style.display='none'; }); document.getElementById('lineSelect').addEventListener('change',()=>{ loadNodeDataToUI(); saveCurrentNodeData(); }); document.getElementById('nodeSelect').addEventListener('change',()=>{ loadNodeDataToUI(); saveCurrentNodeData(); }); document.getElementById('operatorName').addEventListener('input',()=>saveCurrentNodeData()); document.getElementById('productName').addEventListener('input',()=>saveCurrentNodeData()); document.getElementById('planShift').addEventListener('input',()=>{ updateEfficiencyDisplay(); saveCurrentNodeData(); }); document.getElementById('machineSpeed').addEventListener('input',()=>saveCurrentNodeData()); document.getElementById('shiftSelect').addEventListener('change',function(){ let d=getCurrentNodeData(); d.shift=this.value; rebuildHourlyTable(); saveCurrentNodeData(); if(hourlyInputs.length===12) for(let i=0;i<12;i++) hourlyInputs[i].value=d.hourlyValues[i]||0; updateFactFromHours(); }); document.getElementById('materialStart').addEventListener('input',()=>{ calculateMaterialEndDisplay(); saveCurrentNodeData(); }); document.getElementById('materialIncome').addEventListener('input',()=>{ calculateMaterialEndDisplay(); saveCurrentNodeData(); }); document.getElementById('defectAmount').addEventListener('input',()=>{ calculateMaterialEndDisplay(); saveCurrentNodeData(); }); document.getElementById('reportDate').addEventListener('change',()=>saveCurrentNodeData()); document.getElementById('expiryFrom').addEventListener('change',()=>saveCurrentNodeData()); document.getElementById('expiryTo').addEventListener('change',()=>saveCurrentNodeData()); document.getElementById('stickerKg').addEventListener('input',calculateStickers); document.getElementById('stickerGram').addEventListener('input',calculateStickers); document.getElementById('weightPerSticker').addEventListener('input',calculateStickers); document.getElementById('coreWeight').addEventListener('input',calculateStickers); }
+        setInterval(updateTimer,1000); loadAllSavedData(); rebuildHourlyTable(); setupEventListeners(); renderCustomReasons(); renderCustomReasons2(); loadNodeDataToUI(); calculateStickers(); setMode('operator');
+    })();
+</script>
+</body>
+</html>
